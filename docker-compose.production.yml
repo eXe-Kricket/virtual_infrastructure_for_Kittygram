@@ -21,7 +21,12 @@ services:
     image: ${DOCKERHUB_USERNAME}/kittygram_frontend:latest
     volumes:
       - static:/static
-    command: sh -c "cp -r /app/build/* /static/"
+    command: >
+      sh -c "
+      mkdir -p /static &&
+      cp -r /app/build/static/* /static/ &&
+      cp /app/build/index.html /static/index.html
+      "
 
   gateway:
     container_name: gateway
