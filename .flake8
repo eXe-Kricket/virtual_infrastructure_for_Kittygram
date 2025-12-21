@@ -1,0 +1,16 @@
+[flake8]
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    */migrations/*
+
+per-file-ignores =
+    backend/cats/admin.py:F401
+    backend/cats/models.py:E501,W291,W292
+    backend/cats/serializers.py:E301,E501,W292,W293
+    backend/cats/views.py:W291,W292
+    backend/kittygram_backend/settings.py:E501,W291,W292
+    backend/kittygram_backend/urls.py:E501,W292
