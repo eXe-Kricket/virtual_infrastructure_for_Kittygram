@@ -110,6 +110,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           source: docker-compose.production.yml
           target: ~/kittygram/
+          overwrite: true
 
       - name: Deploy on server
         uses: appleboy/ssh-action@v1.0.3
@@ -121,6 +122,8 @@ jobs:
           script: |
             set -e
             cd ~/kittygram
+
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             cat > .env << 'EOF'
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
