@@ -1,0 +1,12 @@
+name: Kittygram workflow description
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "See .github/workflows/main.yml"

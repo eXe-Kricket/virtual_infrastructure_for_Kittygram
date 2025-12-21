@@ -1,0 +1,163 @@
+name: Kittygram CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint_backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install flake8
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Lint backend (PEP8)
+        run: flake8 backend/
+
+  tests_project_files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps for infra tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest PyYAML
+
+      - name: Run infra tests (repo files)
+        run: pytest -q tests/test_files.py
+
+  frontend_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm test -- --watchAll=false
+
+  build_and_push:
+    runs-on: ubuntu-latest
+    needs:
+      - lint_backend
+      - tests_project_files
+      - frontend_tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kittygram_backend:latest
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kittygram_frontend:latest
+
+      - name: Build & push gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: ./nginx
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kittygram_gateway:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_and_push
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy compose file to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: docker-compose.production.yml
+          target: ~/kittygram/
+
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd ~/kittygram
+
+            cat > .env << 'EOF'
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            DB_HOST=postgres
+            DB_PORT=5432
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            EOF
+
+            docker compose -f docker-compose.production.yml pull
+            docker compose -f docker-compose.production.yml up -d
+
+            docker compose -f docker-compose.production.yml exec -T backend python manage.py migrate
+            docker compose -f docker-compose.production.yml exec -T backend python manage.py collectstatic --noinput
+
+  post_deploy_tests_and_notify:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps for post-deploy tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest requests PyYAML
+
+      - name: Run post-deploy tests
+        run: |
+          pytest -q tests/test_connection.py
+          pytest -q tests/test_dockerhub_images.py
+
+      - name: Telegram notify
+        uses: appleboy/telegram-action@v1.0.1
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "Kittygram deploy succeeded and post-deploy tests passed"

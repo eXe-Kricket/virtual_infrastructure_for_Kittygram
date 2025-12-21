@@ -1,0 +1,41 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:13
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  backend:
+    container_name: backend
+    image: ${DOCKERHUB_USERNAME}/kittygram_backend:latest
+    env_file: .env
+    volumes:
+      - static:/code/collected_static
+      - media:/code/media
+    depends_on:
+      - postgres
+
+  frontend:
+    container_name: frontend
+    image: ${DOCKERHUB_USERNAME}/kittygram_frontend:latest
+    volumes:
+      - static:/static
+    command: sh -c "cp -r /app/build/* /static/"
+
+  gateway:
+    container_name: gateway
+    image: ${DOCKERHUB_USERNAME}/kittygram_gateway:latest
+    ports:
+      - "9003:80"
+    volumes:
+      - static:/static
+      - media:/media
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  pg_data:
+  static:
+  media:
