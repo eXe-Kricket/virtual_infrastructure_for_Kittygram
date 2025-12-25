@@ -39,6 +39,13 @@ class Base64ImageField(serializers.ImageField):
 
         return super().to_internal_value(data)
 
+    def to_representation(self, value):
+        if not value:
+            return None
+        if hasattr(value, 'url'):
+            return value.url
+        return super().to_representation(value)
+
 
 class CatSerializer(serializers.ModelSerializer):
     achievements = AchievementSerializer(required=False, many=True)
