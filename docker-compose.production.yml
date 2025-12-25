@@ -31,6 +31,8 @@ services:
   gateway:
     container_name: gateway
     image: ${DOCKERHUB_USERNAME}/kittygram_gateway:latest
+    # порт специально стоит 9003, на 80, 81 и 443 развернут nginx proxy manager, 9000 и 9001 заняты portainer, 9002 для локального запуска, 9003 для автоматического
+    # поэтому возможности на стандартных портах для http/https запуститься возможности нет, в требованиях нет обязательного использования 80 порта
     ports:
       - "9003:80"
     volumes:

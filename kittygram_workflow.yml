@@ -160,4 +160,10 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "Kittygram deploy succeeded and post-deploy tests passed"
+          # может быть, но нет четких требований, что должно быть в сообщении 
+          message: |
+            Kittygram deploy succeeded!
+        
+            Author: ${{ github.actor }}
+            Commit: ${{ github.event.commits[0].message }}
+            Link: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
