@@ -102,15 +102,19 @@ jobs:
     needs: build_and_push
     outputs:
       kittygram_url: ${{ steps.vm.outputs.url }}
+    env:
+      DEPLOY_SSH_HOST: ${{ secrets.SSH_HOST }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: hashicorp/setup-terraform@v3
+        if: ${{ env.DEPLOY_SSH_HOST == '' }}
         with:
           terraform_version: 1.9.8
           terraform_wrapper: false
 
       - name: Terraform Init
+        if: ${{ env.DEPLOY_SSH_HOST == '' }}
         working-directory: infra
         run: >
           terraform init
@@ -118,13 +122,17 @@ jobs:
           -backend-config="access_key=${{ secrets.ACCESS_KEY }}"
           -backend-config="secret_key=${{ secrets.SECRET_KEY }}"
 
-      - name: Read VM address from Terraform state
+      - name: Resolve VM address
         id: vm
         working-directory: infra
         env:
           GATEWAY_PORT: ${{ vars.GATEWAY_PORT || '9003' }}
         run: |
-          VM_HOST="$(terraform output -raw external_ip_address)"
+          if [ -n "$DEPLOY_SSH_HOST" ]; then
+            VM_HOST="$DEPLOY_SSH_HOST"
+          else
+            VM_HOST="$(terraform output -raw external_ip_address)"
+          fi
           echo "host=${VM_HOST}" >> "$GITHUB_OUTPUT"
           echo "url=http://${VM_HOST}:${GATEWAY_PORT}" >> "$GITHUB_OUTPUT"
 
