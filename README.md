@@ -39,7 +39,11 @@ GitHub Secrets:
 
 Для деплоя приложения нужны secrets:
 
-- `SSH_HOST`, `SSH_KEY`, опционально `SSH_USER` и `SSH_PORT`.
+- `SSH_KEY`, опционально `SSH_USER` и `SSH_PORT`.
 - `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
 - `TELEGRAM_TO`, `TELEGRAM_TOKEN`.
+
+Перед первым деплоем запустите workflow `Terraform` с операцией `apply`.
+Workflow деплоя прочитает внешний IP виртуальной машины из Terraform state и
+подключится к созданному серверу по SSH.
