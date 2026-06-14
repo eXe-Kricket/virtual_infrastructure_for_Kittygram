@@ -22,3 +22,24 @@ dockerhub_username: ваш_логин_на_докерхабе
 - Проект Kittygram доступен по ссылке, указанной в `tests.yml`.
 - Пуш в ветку main запускает тестирование и деплой Kittygram, а после успешного деплоя вам приходит сообщение в телеграм.
 - В корне проекта есть файл `kittygram_workflow.yml`.
+
+## Terraform и деплой
+
+Инфраструктура описана в директории `infra/`. Workflow `.github/workflows/terraform.yml`
+запускается вручную и поддерживает операции `plan`, `apply` и `destroy`.
+
+Перед запуском Terraform нужно заранее создать S3-бакет для state и добавить в
+GitHub Secrets:
+
+- `ACCESS_KEY` и `SECRET_KEY` — статический ключ Object Storage.
+- `TF_STATE_BUCKET` — имя заранее созданного bucket для Terraform state.
+- `YC_TOKEN`, `YC_CLOUD_ID`, `YC_FOLDER_ID` — доступ к Яндекс Облаку.
+- `SSH_PUBLIC_KEY` — публичный SSH-ключ для пользователя `ubuntu`.
+- `APP_BUCKET_NAME` — имя bucket, который Terraform создаст для проекта.
+
+Для деплоя приложения нужны secrets:
+
+- `SSH_HOST`, `SSH_KEY`, опционально `SSH_USER` и `SSH_PORT`.
+- `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
+- `TELEGRAM_TO`, `TELEGRAM_TOKEN`.
