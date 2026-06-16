@@ -39,12 +39,12 @@ GitHub Secrets:
 
 Для деплоя приложения нужны secrets:
 
-- `SSH_KEY`, опционально `SSH_HOST`, `SSH_USER` и `SSH_PORT`.
+- `SSH_KEY`, опционально `SSH_USER` и `SSH_PORT`.
 - `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
 - `TELEGRAM_TO`, `TELEGRAM_TOKEN`.
 
 Перед первым деплоем запустите workflow `Terraform` с операцией `apply`.
-Workflow деплоя прочитает внешний IP виртуальной машины из Terraform state и
-подключится к созданному серверу по SSH. Если сервер уже создан вручную,
-достаточно указать `SSH_HOST` и `SSH_USER` в GitHub Secrets.
+После успешного `apply` workflow сохраняет публичный IP виртуальной машины в
+artifact `vm-ip`, а workflow `.github/workflows/deploy.yml` запускается
+автоматически, скачивает этот artifact и деплоит Kittygram на созданную VM.

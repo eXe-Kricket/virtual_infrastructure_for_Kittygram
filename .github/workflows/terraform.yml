@@ -28,6 +28,7 @@ jobs:
       TF_VAR_access_key: ${{ secrets.ACCESS_KEY }}
       TF_VAR_secret_key: ${{ secrets.SECRET_KEY }}
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+      TF_VAR_vm_username: ${{ secrets.SSH_USER || 'ubuntu' }}
       TF_VAR_app_bucket_name: ${{ secrets.APP_BUCKET_NAME }}
       TF_VAR_gateway_port: ${{ vars.GATEWAY_PORT || '9003' }}
 
@@ -58,6 +59,17 @@ jobs:
       - name: Terraform Apply
         if: ${{ github.event.inputs.action == 'apply' }}
         run: terraform apply -auto-approve
+
+      - name: Save VM IP
+        if: ${{ github.event.inputs.action == 'apply' && success() }}
+        run: terraform output -raw external_ip_address > vm_ip.txt
+
+      - name: Upload VM IP artifact
+        if: ${{ github.event.inputs.action == 'apply' && success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm-ip
+          path: infra/vm_ip.txt
 
       - name: Terraform Destroy
         if: ${{ github.event.inputs.action == 'destroy' }}

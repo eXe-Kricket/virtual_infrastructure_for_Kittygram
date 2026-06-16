@@ -63,8 +63,11 @@ resource "yandex_compute_instance" "kittygram" {
   }
 
   metadata = {
-    user-data = file("${path.module}/cloud-init.yaml")
-    ssh-keys  = "ubuntu:${var.ssh_public_key}"
+    serial-port-enable = "1"
+    user-data = templatefile("${path.module}/init/vm-install.yml", {
+      SSH_KEY     = var.ssh_public_key
+      VM_USERNAME = var.vm_username
+    })
   }
 }
 

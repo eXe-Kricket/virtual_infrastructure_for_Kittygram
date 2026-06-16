@@ -67,6 +67,12 @@ variable "ssh_public_key" {
   type        = string
 }
 
+variable "vm_username" {
+  description = "Linux user created by cloud-init for SSH and Docker access."
+  type        = string
+  default     = "ubuntu"
+}
+
 variable "gateway_port" {
   description = "Public HTTP port used by the Kittygram gateway."
   type        = number
