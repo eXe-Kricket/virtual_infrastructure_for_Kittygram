@@ -34,7 +34,7 @@ jobs:
       TF_VAR_vm_username: ${{ secrets.SSH_USER || 'ubuntu' }}
       TF_VAR_app_bucket_name: ${{ secrets.APP_BUCKET_NAME }}
       TF_VAR_gateway_port: ${{ vars.GATEWAY_PORT || '9003' }}
-      TF_ACTION: ${{ github.event.inputs.action || 'plan' }}
+      TF_ACTION: ${{ github.event_name == 'push' && 'apply' || github.event.inputs.action || 'plan' }}
 
     steps:
       - uses: actions/checkout@v4
